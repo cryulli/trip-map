@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Наши рейсы — Санья 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Lora:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --ink: #1f2937; --sub: #6b7280;
+    --accent: #1f3b57; --gold: #d4a537; --line: #e5e9ec; --green: #3f7a5c; --red: #c9534b;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Manrope',sans-serif; background:var(--bg); color:var(--ink); padding:20px 14px 40px; }
+  .wrap { max-width:480px; margin:0 auto; }
+  header { text-align:center; margin-bottom:18px; }
+  header .eyebrow { font-size:11px; letter-spacing:3px; color:var(--gold); font-weight:800; }
+  header h1 { font-family:'Lora',serif; font-size:24px; margin:4px 0 2px; color:var(--accent); }
+  header p { margin:0; color:var(--sub); font-size:12.5px; font-style:italic; }
+  .group-title { font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--sub); margin:22px 4px 8px; font-weight:800; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px; box-shadow:0 1px 2px rgba(0,0,0,0.03); }
+  .row1 { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .airline { font-size:12.5px; color:var(--sub); font-weight:600; }
+  .flightno { font-family:'Lora',serif; font-weight:600; font-size:14px; color:var(--accent); }
+  .route { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .city { text-align:center; }
+  .code { font-size:22px; font-weight:800; letter-spacing:1px; }
+  .cityname { font-size:10.5px; color:var(--sub); }
+  .arrow { flex:1; text-align:center; color:var(--sub); font-size:13px; position:relative; }
+  .arrow::before { content:""; display:block; height:1px; background:var(--line); position:absolute; top:50%; left:0; right:0; }
+  .arrow span { background:var(--card); position:relative; padding:0 6px; }
+  .meta { display:flex; justify-content:space-between; font-size:12px; color:var(--sub); border-top:1px dashed var(--line); padding-top:8px; margin-top:4px; }
+  .meta b { color:var(--ink); font-weight:700; }
+
+  .status-box { margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+  .status-badge { display:inline-block; font-size:11px; font-weight:800; padding:2px 9px; border-radius:10px; background:#eef2f5; color:var(--sub); }
+  .status-badge.live { background:#e7f3ea; color:var(--green); }
+  .status-badge.delay { background:#fbeceb; color:var(--red); }
+  .status-grid { display:flex; gap:14px; margin-top:8px; font-size:12px; }
+  .status-grid div b { display:block; font-size:14px; color:var(--ink); }
+  .status-grid div span { color:var(--sub); font-size:10.5px; }
+
+  .btn { display:block; width:100%; text-align:center; margin-top:8px; background:var(--accent); color:white; border:none; text-decoration:none;
+    padding:9px 0; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .btn.secondary { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .btn:disabled { opacity:0.5; }
+  .linkrow { display:flex; gap:8px; margin-top:8px; }
+  .linkrow .btn { margin-top:0; }
+
+  details.raw { margin-top:8px; font-size:10.5px; color:var(--sub); }
+  details.raw pre { white-space:pre-wrap; word-break:break-all; background:#f7f9fa; padding:8px; border-radius:6px; max-height:160px; overflow:auto; }
+
+  .note { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:11.5px; color:var(--sub); margin-top:20px; line-height:1.5; }
+  .note b { color:var(--ink); }
+  footer { text-align:center; font-size:10.5px; color:var(--sub); margin-top:18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">HAINAN · SANYA 2026</div>
+    <h1>Наши рейсы</h1>
+    <p>28 сентября – 7 октября · нажми «Проверить статус» на нужном рейсе</p>
+  </header>
+  <div id="app"></div>
+  <div class="note">
+    <b>Как это устроено:</b> статус подгружается автоматически при открытии страницы — данные тянутся напрямую из твоего браузера через сервис AeroDataBox (RapidAPI) по твоему личному ключу, который вписан в код этой страницы. <b>Не выкладывай репозиторий как публичный, если не хочешь, чтобы ключ увидели посторонние</b> (или используй приватный репозиторий на платном GitHub, либо просто следи за расходом лимита). Чтобы не тратить лимит зря при частых открытиях, данные на 15 минут кэшируются в браузере — «Обновить сейчас» под каждым рейсом обходит кэш и берёт самые свежие данные. Реальные гейт/задержка появляются обычно за 1–7 дней до вылета — до этого будет просто расписание.
+  </div>
+  <footer>index.html · Sanya flights tracker</footer>
+</div>
+
+<script>
+// ====== ВСТАВЬ СВОЙ КЛЮЧ СЮДА ======
+const RAPIDAPI_KEY = "ВСТАВЬ_СЮДА_СВОЙ_КЛЮЧ";
+// ===================================
+
+const FLIGHTS = [
+  { group: "Семья — туда", airline: "China Eastern Airlines", num: "MU6020", date: "2026-09-27",
+    from: "SVO", fromCity: "Москва", to: "PVG", toCity: "Шанхай", dep: "20:25", arr: "10:35 (28.09)" },
+  { group: "Семья — туда", airline: "China Eastern Airlines", num: "MU5379", date: "2026-09-28",
+    from: "PVG", fromCity: "Шанхай", to: "SYX", toCity: "Санья", dep: "12:50", arr: "16:20" },
+  { group: "Семья — обратно", airline: "China Eastern Airlines", num: "MU5398", date: "2026-10-07",
+    from: "SYX", fromCity: "Санья", to: "PVG", toCity: "Шанхай", dep: "06:45", arr: "09:55" },
+  { group: "Семья — обратно", airline: "China Eastern Airlines", num: "MU591", date: "2026-10-07",
+    from: "PVG", fromCity: "Шанхай", to: "SVO", toCity: "Москва", dep: "12:05", arr: "17:00" },
+  { group: "Аня — отдельно", airline: "Hainan Airlines", num: "HU7302", date: "2026-10-01",
+    from: "CTU", fromCity: "Чэнду", to: "SYX", toCity: "Санья", dep: "уточнить", arr: "уточнить" },
+  { group: "Аня — отдельно", airline: "Sichuan Airlines", num: "3U6728", date: "2026-10-07",
+    from: "SYX", fromCity: "Санья", to: "CTU", toCity: "Чэнду", dep: "уточнить", arr: "уточнить" },
+];
+
+function statusLabel(raw) {
+  if (!raw) return { text: "нет данных", cls: "" };
+  const s = String(raw).toLowerCase();
+  if (s.includes("cancel")) return { text: "Отменён", cls: "delay" };
+  if (s.includes("delay")) return { text: "Задержка", cls: "delay" };
+  if (s.includes("depart") || s.includes("enroute") || s.includes("active") || s.includes("air")) return { text: "В пути", cls: "live" };
+  if (s.includes("arriv") || s.includes("land")) return { text: "Прибыл", cls: "live" };
+  if (s.includes("expect") || s.includes("sched")) return { text: "По расписанию", cls: "live" };
+  return { text: raw, cls: "" };
+}
+
+function fmtTime(t) {
+  if (!t) return "—";
+  if (typeof t === "object" && t.local) return t.local.slice(11,16);
+  if (typeof t === "string") return t.slice(11,16) || t;
+  return "—";
+}
+
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 минут
+
+function renderStatusHtml(f) {
+  const st = statusLabel(f.status);
+  const dep = f.departure || {};
+  const gate = dep.gate || "—";
+  const terminal = dep.terminal || "—";
+  const schedDep = fmtTime(dep.scheduledTime);
+  const revisedDep = dep.revisedTime ? fmtTime(dep.revisedTime) : null;
+  return `
+    <span class="status-badge ${st.cls}">${st.text}</span>
+    <div class="status-grid">
+      <div><b>${gate}</b><span>Гейт</span></div>
+      <div><b>${terminal}</b><span>Терминал</span></div>
+      <div><b>${schedDep}</b><span>По расп.</span></div>
+      ${revisedDep && revisedDep !== schedDep ? `<div><b style="color:var(--red)">${revisedDep}</b><span>Факт. время</span></div>` : ""}
+    </div>
+    <details class="raw"><summary>Сырые данные (для отладки)</summary><pre>${JSON.stringify(f, null, 1)}</pre></details>
+  `;
+}
+
+async function checkFlight(flightNum, date, cardEl, force) {
+  const statusBox = cardEl.querySelector(".status-box");
+  const cacheKey = `flightcache_${flightNum}_${date}`;
+
+  if (!force) {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.ts < CACHE_TTL_MS) {
+          statusBox.innerHTML = renderStatusHtml(parsed.data) + `<div style="font-size:9.5px;color:var(--sub);margin-top:4px;">из кэша, обновлено ${new Date(parsed.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}</div>`;
+          return;
+        }
+      } catch(e) {}
+    }
+  }
+
+  statusBox.innerHTML = "<span style='font-size:12px;color:var(--sub)'>Загружаю…</span>";
+  try {
+    const url = `https://aerodatabox.p.rapidapi.com/flights/Number/${flightNum}/${date}?withAircraftImage=false&withLocation=false`;
+    const res = await fetch(url, {
+      headers: {
+        "X-RapidAPI-Key": RAPIDAPI_KEY,
+        "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com"
+      }
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const f = Array.isArray(data) ? data[0] : data;
+    if (!f) { statusBox.innerHTML = "<span style='font-size:12px;color:var(--sub)'>Пока нет данных — рано, попробуй позже.</span>"; return; }
+
+    localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: f }));
+    statusBox.innerHTML = renderStatusHtml(f);
+  } catch (e) {
+    statusBox.innerHTML = `<span style="font-size:12px;color:var(--red)">Не удалось получить данные (${e.message}). Проверь ключ или попробуй кнопку живого трекера ниже.</span>`;
+  }
+}
+
+function render() {
+  const app = document.getElementById("app");
+  let html = "";
+  let lastGroup = "";
+  FLIGHTS.forEach((f, i) => {
+    if (f.group !== lastGroup) { html += `<div class="group-title">${f.group}</div>`; lastGroup = f.group; }
+    html += `
+      <div class="card" data-idx="${i}">
+        <div class="row1"><span class="airline">${f.airline}</span><span class="flightno">${f.num}</span></div>
+        <div class="route">
+          <div class="city"><div class="code">${f.from}</div><div class="cityname">${f.fromCity}</div></div>
+          <div class="arrow"><span>${f.date.slice(8,10)}.${f.date.slice(5,7)}</span></div>
+          <div class="city"><div class="code">${f.to}</div><div class="cityname">${f.toCity}</div></div>
+        </div>
+        <div class="meta"><span>Вылет <b>${f.dep}</b></span><span>Прилёт <b>${f.arr}</b></span></div>
+        <div class="status-box"></div>
+        <div class="linkrow">
+          <button class="btn" onclick="checkFlight('${f.num}','${f.date}', this.closest('.card'), true)">Обновить сейчас ⟳</button>
+          <a class="btn secondary" href="https://www.google.com/search?q=${f.num}+flight+status" target="_blank" rel="noopener">Трекер →</a>
+        </div>
+      </div>
+    `;
+  });
+  app.innerHTML = html;
+
+  // Автозагрузка статуса для всех рейсов сразу при открытии страницы
+  document.querySelectorAll(".card").forEach(cardEl => {
+    const idx = Number(cardEl.dataset.idx);
+    const f = FLIGHTS[idx];
+    checkFlight(f.num, f.date, cardEl, false);
+  });
+}
+render();
+</script>
+</body>
+</html>
