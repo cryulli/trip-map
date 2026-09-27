@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Хайнань — карта локаций</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root { color-scheme: light; --ink: #14223b; --muted: #65728a; --line: #dce3ed; --accent: #1864ab; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--ink); background: #f4f7fa; }
+    header { padding: 22px 26px 18px; background: white; border-bottom: 1px solid var(--line); }
+    h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+    .sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .layout { display: grid; grid-template-columns: 445px minmax(0, 1fr); height: calc(100vh - 91px); min-height: 590px; }
+    aside { overflow: auto; padding: 18px; background: white; border-right: 1px solid var(--line); }
+    .hotel { padding: 14px; border: 1px solid #ffd3ce; border-radius: 12px; background: #fff6f4; }
+    .hotel h2 { color: #b42318; }
+    h2 { margin: 0 0 7px; font-size: 15px; }
+    .address { margin: 0; font-size: 13px; line-height: 1.45; }
+    .controls { display: flex; gap: 8px; margin: 16px 0 14px; }
+    button { appearance: none; cursor: pointer; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 10px; background: #eff6ff; color: #124f85; font: inherit; font-size: 13px; }
+    button:hover { background: #dbeafe; }
+    .hint { margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .group-title { margin: 15px 0 6px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .place { display: grid; grid-template-columns: 9px 1fr; gap: 9px; width: 100%; border: 0; border-radius: 8px; padding: 8px 7px; text-align: left; color: var(--ink); background: transparent; }
+    .place:hover, .place:focus-visible { outline: none; background: #f1f6fb; }
+    .dot { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; }
+    .place-name { display: block; font-size: 13px; font-weight: 650; line-height: 1.25; }
+    .place-cn { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.25; }
+    .place-meta { display: block; margin-top: 5px; color: #38506c; font-size: 11px; line-height: 1.35; }
+    .note { margin: 15px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.45; }
+    #map { min-width: 0; height: 100%; }
+    .leaflet-popup-content { width: 250px; margin: 13px 15px; font-family: inherit; }
+    .popup-title { margin: 0 0 4px; font-size: 14px; font-weight: 750; }
+    .popup-cn, .popup-info, .popup-coords, .popup-route { margin: 0; font-size: 12px; line-height: 1.4; }
+    .popup-cn, .popup-coords { color: var(--muted); }
+    .popup-info, .popup-route { margin-top: 7px; }
+    .popup-price { margin: 8px 0 0; color: #0f5132; font-size: 12px; line-height: 1.4; }
+    .ticket-link { display: inline-block; margin-top: 8px; color: #0b61a4; font-size: 11px; }
+    .popup-coords { margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+    @media (max-width: 760px) {
+      header { padding: 16px 18px; }
+      .layout { display: flex; flex-direction: column-reverse; height: auto; min-height: 0; }
+      aside { height: 43vh; border-top: 1px solid var(--line); border-right: 0; }
+      #map { height: 57vh; min-height: 440px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Хайнань — все выбранные локации</h1>
+    <p class="sub">Интерактивная карта на базе OpenStreetMap · цены проверены на китайских площадках 27 сентября 2026</p>
+  </header>
+  <main class="layout">
+    <aside>
+      <section class="hotel" aria-labelledby="hotel-title">
+        <h2 id="hotel-title">Ваш отель · Crowne Plaza Resort Sanya Bay</h2>
+        <p class="address">No. 228 Sanya Bay Road, Tianya District, Sanya, Hainan 572000, China<br>三亚湾路 228 号 · Тел.: +86 898 8825 8888</p>
+      </section>
+      <div class="controls">
+        <button type="button" id="all-hainan">Весь Хайнань</button>
+        <button type="button" id="sanya-area">Район Саньи</button>
+      </div>
+      <p class="hint">Расчёт: 2 взрослых + 1 студент + ребёнок 11 лет. Все суммы — CNY, за вход на всю группу; расстояние — в одну сторону от отеля. Красная метка — отель.</p>
+      <nav id="place-list" aria-label="Список локаций"></nav>
+      <p class="note">Цены «от» зависят от даты, наличия и типа документа. Скидка студенту действует только при подходящем очном студенческом билете; у ребёнка 11 лет там, где правило привязано к росту, указана вилка. Скутер: оценка по обычным дорогам, без скоростных магистралей; поездку в Хайкоу на скутере не рекомендую. Для Наньшаня храм и статуя входят в один билет — не суммируйте их дважды.</p>
+    </aside>
+    <div id="map" aria-label="Карта Хайнаня с отмеченными локациями"></div>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const places = [
+      { id: 'hotel', group: 'Ваш отель', name: 'Crowne Plaza Resort Sanya Bay', cn: '三亚湾皇冠假日度假酒店', lat: 18.290185, lng: 109.376044, color: '#c0362c', info: 'No. 228 Sanya Bay Road, Tianya District, Sanya', ticket: '—', ticketDetail: 'Точка отправления.', car: 'вы здесь', scooter: 'вы здесь', ticketSource: '', ticketUrl: '' },
+      { id: 'dadonghai', group: 'Санья и городские бухты', name: 'Дадунхай', cn: '大东海沙滩', lat: 18.220480, lng: 109.518210, color: '#1864ab', info: 'Пляж Дадунхай', ticket: '¥0', ticketDetail: 'Свободный вход; водные занятия, душ и шкафчики оплачиваются отдельно.', car: '23,4 км · 18 мин', scooter: '≈23 км · 50–55 мин', ticketSource: 'Ctrip / 携程', ticketUrl: 'https://you.ctrip.com/sight/sanya61/3224.html' },
+      { id: 'phoenix', group: 'Санья и городские бухты', name: 'Феникс-Ридж · «Клятва у моря»', cn: '凤凰岭海誓山盟景区', lat: 18.253210, lng: 109.544990, color: '#1864ab', info: 'Смотровая площадка и канатная дорога', ticket: '¥315–320', ticketDetail: 'Базовый пакет с канатной дорогой и шоу: 3 × ¥80; ребёнок 6–12 лет и 1,2–1,4 м — ¥75, иначе ¥80. Общей скидки иностранному студенту нет.', car: '22,2 км · 23 мин', scooter: '≈22 км · 50–55 мин', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail.htm?id=3935071300' },
+      { id: 'luhuitou', group: 'Санья и городские бухты', name: 'Лухуэйтоу', cn: '鹿回头风景区', lat: 18.227154, lng: 109.496275, color: '#1864ab', info: 'Парк «Олень, повернувший голову»', ticket: '¥0', ticketDetail: 'Вход бесплатный; днём может потребоваться онлайн-бронирование.', car: '25,6 км · 25 мин', scooter: '≈26 км · 55–60 мин', ticketSource: 'Ctrip / 携程', ticketUrl: 'https://you.ctrip.com/sight/sanya61/3230.html' },
+      { id: 'romance', group: 'Санья и городские бухты', name: 'Sanya Romance Park', cn: '三亚千古情景区', lat: 18.291948, lng: 109.526476, color: '#1864ab', info: 'Парк и шоу «Романтика Саньи»', ticket: '¥838–898', ticketDetail: 'Шоу + парк, зрительские места: 2 взрослых × ¥260, студент ¥118, ребёнок 1,2–1,5 м — ориентир ¥200; выше — ¥260. У ребёнка младше 1,2 м без отдельного места — бесплатно.', car: '19,8 км · 15 мин', scooter: '≈20 км · 40–45 мин', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail_192049.html' },
+      { id: 'daxiaodongtian', group: 'Запад Саньи', name: 'Дасьяодунтянь', cn: '大小洞天', lat: 18.305040, lng: 109.151620, color: '#0f766e', info: 'Туристическая зона «Большие и малые небесные гроты»', ticket: '¥0 / ¥111,2 с шаттлом', ticketDetail: 'Вход бесплатный. Обзорный электрокар — ¥27,8 на человека, если всем нужен.', car: '30,1 км · 26 мин', scooter: '≈30 км · 65–70 мин', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail_3748366838.html' },
+      { id: 'nanshan-temple', group: 'Запад Саньи', name: 'Храм Наньшань', cn: '南山寺', lat: 18.295047, lng: 109.207831, color: '#0f766e', info: 'Буддийский храм в зоне Nanshan', ticket: '¥324 в сентябре / ¥386 октябрь–апрель', ticketDetail: 'Один билет покрывает храм и статую: 2 взрослых + студент + ребёнок 11 лет. Низкий сезон: ¥108 + ¥108 + ¥54 + ¥54; высокий: ¥129 + ¥129 + ¥64 + ¥64. Парк-трамвай +¥30 с человека.', car: '23,0 км · 20 мин', scooter: '≈23 км · 50–55 мин', ticketSource: 'Официальный Nanshan / 南山官网', ticketUrl: 'https://www.nanshan.com/nanshan/pwxz.html' },
+      { id: 'guanyin', group: 'Запад Саньи', name: 'Статуя Гуаньинь Наньшаня', cn: '南山海上观音', lat: 18.292332, lng: 109.208584, color: '#0f766e', info: '108-метровая статуя Гуаньинь у моря', ticket: 'включено в Наньшань', ticketDetail: 'Отдельный билет не нужен: не добавляйте эту сумму к билету в храм Наньшань.', car: '23,0 км · 20 мин', scooter: '≈23 км · 50–55 мин', ticketSource: 'Официальный Nanshan / 南山官网', ticketUrl: 'https://www.nanshan.com/nanshan/pwxz.html' },
+      { id: 'tianya-haijiao', group: 'Запад Саньи', name: 'Тянья-Хайцзяо', cn: '天涯海角', lat: 18.292624, lng: 109.345045, color: '#0f766e', info: 'Парк «Край неба и угол моря»', ticket: '¥0', ticketDetail: 'Главный вход бесплатный, но нужен бесплатный именной слот/QR в официальном канале.', car: '5,3 км · 6 мин', scooter: '≈5 км · 15 мин', ticketSource: 'Официальный Tianya Haijiao / 天涯海角', ticketUrl: 'https://aitianya.cn/' },
+      { id: 'little-santorini', group: 'Запад Саньи', name: '«Маленький Санторини» · Tianya Town', cn: '天涯小镇 / 马岭社区', lat: 18.306207, lng: 109.327099, color: '#0f766e', info: 'Сине-белые улицы Малинской общины', ticket: '¥0', ticketDetail: 'Это открытая жилая прибрежная зона; кафе, аренда скутера и фотосъёмка в частных пространствах не включены.', car: '7,2 км · 6 мин', scooter: '≈7 км · 17–20 мин', ticketSource: 'Ctrip / 携程', ticketUrl: 'https://you.ctrip.com/sight/sanya61/5068588.html' },
+      { id: 'hyatt', group: 'Запад Саньи', name: 'Hyatt Regency Sanya Tianli Bay', cn: '三亚天丽湾凯悦酒店', lat: 18.292488, lng: 109.358364, color: '#0f766e', info: 'Tianli Bay, No. 699 Tongjing Road', ticket: '¥0*', ticketDetail: 'Не отдельный парк. Доступ на частную территорию и услуги отеля зависят от текущих правил у входа.', car: '3,5 км · 4 мин', scooter: '≈4 км · 10 мин', ticketSource: 'Hyatt', ticketUrl: 'https://www.hyatt.com/hyatt-regency/en-US/syxrs-hyatt-regency-sanya-tianli-bay/hotel-info' },
+      { id: 'barbie', group: 'Запад Саньи', name: '«Пляж Барби» · фотозона', cn: '粉色沙滩', lat: 18.291950, lng: 109.358020, color: '#db2777', info: 'Розовая пляжная фотозона на территории Hyatt Regency Sanya Tianli Bay', ticket: '¥0*', ticketDetail: 'Отдельный билет не продаётся; фотозона находится на территории Hyatt. Перед поездкой уточните доступ у отеля.', car: '3,5 км · 4 мин', scooter: '≈4 км · 10 мин', ticketSource: 'Hyatt', ticketUrl: 'https://www.hyatt.com/hyatt-regency/en-US/syxrs-hyatt-regency-sanya-tianli-bay/hotel-info' },
+      { id: 'haichang', group: 'Хайтан-Бэй', name: 'Sanya Haichang Fantasy Town', cn: '海昌梦幻海洋不夜城', lat: 18.314855, lng: 109.722554, color: '#7c3aed', info: 'Тематический вечерний парк Haichang', ticket: '¥0 вход / ¥632 все аттракционы', ticketDetail: 'Вход на улицы бесплатный. Безлимитный билет на аттракционы — ¥158 с человека, скидки студенту и ребёнку в этом пакете не заявлены.', car: '44,4 км · 33 мин', scooter: '≈44 км · 1 ч 30–40 мин', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail_470269.html' },
+      { id: 'atlantis', group: 'Хайтан-Бэй', name: 'Аквапарк Atlantis Sanya', cn: '亚特兰蒂斯水世界', lat: 18.356169, lng: 109.741058, color: '#7c3aed', info: 'Aquaventure Waterpark, Atlantis Sanya', ticket: '¥1 134', ticketDetail: '3 взрослых × ¥292 + ребёнок 5–11 лет ¥258. Студенческий тариф в актуальном листинге только для студентов Хайнаня, поэтому заложен взрослый билет.', car: '48,6 км · 38 мин', scooter: '≈49 км · 1 ч 40–50 мин', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail.htm?cat=from_area%3Dmpshouye_search_label&id=467015' },
+      { id: 'yanoda', group: 'Внутренние районы', name: 'Янода · тропический лес', cn: '呀诺达雨林文化旅游区', lat: 18.461914, lng: 109.642422, color: '#2f855a', info: 'Yanoda Rainforest Cultural Tourism Zone', ticket: '¥736', ticketDetail: 'Базовый пакет с канатной дорогой: 2 взрослых × ¥208, студент ¥160, ребёнок до 18 лет ¥160. Нужны действующие документы для скидок.', car: '57,0 км · 1 ч 1 мин', scooter: '≈57 км · 2 ч 05–20 мин', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail.htm?cat=from_area%3Dts_sku%26from_index%3D2%26from_value%3D%25E6%25B5%25B7%25E5%258F%25A3%25E5%25BF%2585%25E6%25B8%25B8%26dist_city%3D%25E4%25BA%2594%25E6%258C%2587%25E5%25B1%25B1&id=2074' },
+      { id: 'binglanggu', group: 'Внутренние районы', name: 'Деревня Ли и Мяо · Бинлангу', cn: '槟榔谷黎苗文化旅游区', lat: 18.400700, lng: 109.659400, color: '#2f855a', info: 'Binglanggu Li & Miao Cultural Heritage Park', ticket: '¥200', ticketDetail: 'Вход: 2 взрослых × ¥60, студент ¥40, ребёнок 7–17 лет ¥40. Внутренний шаттл — отдельно ¥20 с человека, если понадобится.', car: '44,9 км · 35 мин', scooter: '≈45 км · 1 ч 35–45 мин', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail_32004.html' },
+      { id: 'wildlife', group: 'Хайкоу', name: 'Сафари-парк Хайкоу', cn: '海南热带野生动植物园', lat: 19.771899, lng: 110.242032, color: '#d97706', info: 'Hainan Tropical Wildlife Park and Botanical Garden', ticket: '¥330–363', ticketDetail: 'Промо-цена с предварительным онлайн-бронированием: 2 взрослых × ¥99, студент ¥66, ребёнок ¥66 при росте 1,2–1,4 м; выше — взрослый ¥99. На скутере не рекомендую.', car: '263,5 км · 3 ч 18 мин', scooter: 'не рекомендую; ≈8 ч обычными дорогами', ticketSource: 'Qunar / 去哪儿', ticketUrl: 'https://touch.piao.qunar.com/touch/detail.htm?id=1914199304' }
+    ];
+
+    const map = L.map('map', { zoomControl: true, preferCanvas: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+    }).addTo(map);
+    const markers = new Map();
+    const allBounds = L.latLngBounds(places.map(p => [p.lat, p.lng]));
+    const sanyaBounds = L.latLngBounds(places.filter(p => p.lat < 18.38).map(p => [p.lat, p.lng]));
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]);
+    }
+
+    function popupHtml(p) {
+      const ticketLink = p.ticketUrl
+        ? `<a class="ticket-link" href="${escapeHtml(p.ticketUrl)}" target="_blank" rel="noopener">Источник: ${escapeHtml(p.ticketSource)}</a>`
+        : '';
+      return `<p class="popup-title">${escapeHtml(p.name)}</p><p class="popup-cn">${escapeHtml(p.cn)}</p><p class="popup-price"><strong>На 4 человек: ${escapeHtml(p.ticket)}</strong></p><p class="popup-info">${escapeHtml(p.ticketDetail)}</p><p class="popup-route">🚗 ${escapeHtml(p.car)}<br>🛵 ${escapeHtml(p.scooter)}</p>${ticketLink}<p class="popup-coords">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</p>`;
+    }
+
+    places.forEach((p) => {
+      const marker = L.circleMarker([p.lat, p.lng], { radius: p.id === 'hotel' ? 9 : 7, color: '#fff', weight: 2, fillColor: p.color, fillOpacity: 1 });
+      marker.bindPopup(popupHtml(p));
+      marker.addTo(map);
+      markers.set(p.id, marker);
+    });
+
+    const list = document.getElementById('place-list');
+    const groups = [...new Set(places.map(p => p.group))];
+    groups.forEach((group) => {
+      const title = document.createElement('p');
+      title.className = 'group-title';
+      title.textContent = group;
+      list.appendChild(title);
+      places.filter(p => p.group === group).forEach((p) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'place';
+        item.innerHTML = `<span class="dot" style="background:${p.color}"></span><span><span class="place-name">${escapeHtml(p.name)}</span><span class="place-cn">${escapeHtml(p.cn)}</span><span class="place-meta">На 4: ${escapeHtml(p.ticket)}<br>🚗 ${escapeHtml(p.car)} · 🛵 ${escapeHtml(p.scooter)}</span></span>`;
+        item.addEventListener('click', () => {
+          map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 14), { duration: 0.65 });
+          markers.get(p.id).openPopup();
+        });
+        list.appendChild(item);
+      });
+    });
+
+    document.getElementById('all-hainan').addEventListener('click', () => map.fitBounds(allBounds, { padding: [34, 34] }));
+    document.getElementById('sanya-area').addEventListener('click', () => map.fitBounds(sanyaBounds, { padding: [34, 34] }));
+    map.fitBounds(allBounds, { padding: [36, 36] });
+  </script>
+</body>
+</html>
