@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Наши рейсы — Санья 2026 · LIVE</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Lora:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --ink: #1f2937; --sub: #6b7280;
+    --accent: #1f3b57; --gold: #d4a537; --line: #e5e9ec; --green: #3f7a5c; --red: #c9534b; --amber: #b07d2b;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Manrope',sans-serif; background:var(--bg); color:var(--ink); padding:20px 14px 40px; }
+  .wrap { max-width:480px; margin:0 auto; }
+  header { text-align:center; margin-bottom:14px; }
+  header .eyebrow { font-size:11px; letter-spacing:3px; color:var(--gold); font-weight:800; }
+  header h1 { font-family:'Lora',serif; font-size:24px; margin:4px 0 2px; color:var(--accent); }
+  header p { margin:0; color:var(--sub); font-size:12.5px; font-style:italic; }
+  .livebar { display:flex; align-items:center; justify-content:center; gap:8px; margin:10px auto 0; font-size:11.5px; color:var(--sub);
+    background:var(--card); border:1px solid var(--line); border-radius:20px; padding:5px 14px; width:fit-content; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(63,122,92,.5);} 70%{box-shadow:0 0 0 7px rgba(63,122,92,0);} 100%{box-shadow:0 0 0 0 rgba(63,122,92,0);} }
+  .dot.err { background:var(--red); animation:none; }
+  .group-title { font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--sub); margin:22px 4px 8px; font-weight:800; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px; box-shadow:0 1px 2px rgba(0,0,0,0.03); }
+  .row1 { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .airline { font-size:12.5px; color:var(--sub); font-weight:600; }
+  .flightno { font-family:'Lora',serif; font-weight:600; font-size:14px; color:var(--accent); }
+  .route { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .city { text-align:center; }
+  .code { font-size:22px; font-weight:800; letter-spacing:1px; }
+  .cityname { font-size:10.5px; color:var(--sub); }
+  .arrow { flex:1; text-align:center; color:var(--sub); font-size:13px; position:relative; }
+  .arrow::before { content:""; display:block; height:1px; background:var(--line); position:absolute; top:50%; left:0; right:0; }
+  .arrow span { background:var(--card); position:relative; padding:0 6px; }
+  .meta { display:flex; justify-content:space-between; font-size:12px; color:var(--sub); border-top:1px dashed var(--line); padding-top:8px; margin-top:4px; }
+  .meta b { color:var(--ink); font-weight:700; }
+
+  .status-box { margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+  .status-badge { display:inline-block; font-size:11px; font-weight:800; padding:2px 9px; border-radius:10px; background:#eef2f5; color:var(--sub); }
+  .status-badge.live { background:#e7f3ea; color:var(--green); }
+  .status-badge.delay { background:#fbeceb; color:var(--red); }
+  .status-badge.warn { background:#fdf3e0; color:var(--amber); }
+  .updated { font-size:9.5px; color:var(--sub); margin-top:6px; }
+  .status-grid { display:flex; gap:14px; margin-top:8px; font-size:12px; flex-wrap:wrap; }
+  .status-grid div b { display:block; font-size:14px; color:var(--ink); }
+  .status-grid div b.bad { color:var(--red); }
+  .status-grid div span { color:var(--sub); font-size:10.5px; }
+
+  .btn { display:block; width:100%; text-align:center; margin-top:8px; background:var(--accent); color:white; border:none; text-decoration:none;
+    padding:9px 0; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .btn.secondary { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .btn:disabled { opacity:0.5; }
+  .linkrow { display:flex; gap:8px; margin-top:8px; }
+  .linkrow .btn { margin-top:0; }
+
+  details.raw { margin-top:8px; font-size:10.5px; color:var(--sub); }
+  details.raw pre { white-space:pre-wrap; word-break:break-all; background:#f7f9fa; padding:8px; border-radius:6px; max-height:160px; overflow:auto; }
+
+  .note { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:11.5px; color:var(--sub); margin-top:20px; line-height:1.5; }
+  .note b { color:var(--ink); }
+  .keywarn { background:#fdf3e0; border:1px solid #ecd9a8; border-radius:12px; padding:10px 14px; font-size:11.5px; color:var(--amber); margin-top:10px; line-height:1.5; display:none; }
+  footer { text-align:center; font-size:10.5px; color:var(--sub); margin-top:18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">HAINAN · SANYA 2026 · LIVE</div>
+    <h1>Наши рейсы</h1>
+    <p>28 сентября – 7 октября · статусы обновляются сами</p>
+    <div class="livebar"><span class="dot" id="livedot"></span><span id="livetext">Подключение…</span></div>
+  </header>
+  <div class="keywarn" id="keywarn">⚠️ Ключ RapidAPI не вставлен — вставь свой ключ в коде (строка RAPIDAPI_KEY), иначе статусы не загрузятся.</div>
+  <div id="app"></div>
+  <div class="note">
+    <b>Онлайн-режим:</b> страница сама обновляет статусы — рейсы на сегодня/завтра и активные в воздухе обновляются каждые 60 секунд, остальные раз в 10 минут. Гейты и задержки появляются за 1–7 дней до вылета, когда аэропорт их публикует — до этого будет «По расписанию».<br><br>
+    <b>Ключ:</b> данные берутся из твоего браузера напрямую через RapidAPI (AeroDataBox) по личному ключу, вписанному в код. Не делай репозиторий публичным, если не хочешь светить ключ. Лимит бесплатного тарифа ~50 запросов/мес — на поездку хватает, но не жми «Обновить» без нужды.
+  </div>
+  <footer>index.html · Sanya flights tracker · live</footer>
+</div>
+
+<script>
+// ====== ВСТАВЬ СВОЙ КЛЮЧ СЮДА ======
+const RAPIDAPI_KEY = "8283df8aa4mshe1134d2ea820a18p12d867jsneb372f2cf0c2";
+// ===================================
+
+// Как часто обновлять: активные рейсы (сегодня/вчера/завтра/в воздухе) и остальные
+const REFRESH_ACTIVE_MS = 60 * 1000;      // 60 сек — «живой» режим
+const REFRESH_IDLE_MS   = 10 * 60 * 1000; // 10 мин — рейсы в отдалённых датах
+const CACHE_TTL_MS = 5 * 60 * 1000;       // кэш вручную не нужен, автообновление само всё тянет
+
+const FLIGHTS = [
+  { group: "Семья — туда", airline: "China Eastern Airlines", num: "MU6020", date: "2026-09-27",
+    from: "SVO", fromCity: "Москва", to: "PVG", toCity: "Шанхай", dep: "20:25", arr: "10:35 (28.09)" },
+  { group: "Семья — туда", airline: "China Eastern Airlines", num: "MU5379", date: "2026-09-28",
+    from: "PVG", fromCity: "Шанхай", to: "SYX", toCity: "Санья", dep: "12:50", arr: "16:20" },
+  { group: "Семья — обратно", airline: "China Eastern Airlines", num: "MU5398", date: "2026-10-07",
+    from: "SYX", fromCity: "Санья", to: "PVG", toCity: "Шанхай", dep: "06:45", arr: "09:55" },
+  { group: "Семья — обратно", airline: "China Eastern Airlines", num: "MU591", date: "2026-10-07",
+    from: "PVG", fromCity: "Шанхай", to: "SVO", toCity: "Москва", dep: "12:05", arr: "17:00" },
+  { group: "Аня — отдельно", airline: "Hainan Airlines", num: "HU7302", date: "2026-10-01",
+    from: "CTU", fromCity: "Чэнду", to: "SYX", toCity: "Санья", dep: "уточнить", arr: "уточнить" },
+  { group: "Аня — отдельно", airline: "Sichuan Airlines", num: "3U6728", date: "2026-10-07",
+    from: "SYX", fromCity: "Санья", to: "CTU", toCity: "Чэнду", dep: "уточнить", arr: "уточнить" },
+];
+
+const state = {}; // num_date -> {data, ts, error}
+
+function todayStr(offsetDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + (offsetDays || 0));
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+function statusLabel(raw) {
+  if (!raw) return { text: "нет данных", cls: "" };
+  const s = String(raw).toLowerCase();
+  if (s.includes("cancel")) return { text: "Отменён", cls: "delay" };
+  if (s.includes("delay")) return { text: "Задержка", cls: "delay" };
+  if (s.includes("depart") || s.includes("enroute") || s.includes("active") || s.includes("air")) return { text: "В пути", cls: "live" };
+  if (s.includes("arriv") || s.includes("land")) return { text: "Прибыл", cls: "live" };
+  if (s.includes("expect") || s.includes("sched")) return { text: "По расписанию", cls: "warn" };
+  return { text: raw, cls: "" };
+}
+
+function fmtTime(t) {
+  if (!t) return null;
+  if (typeof t === "object" && t.local) return t.local.slice(11,16);
+  if (typeof t === "string") return t.slice(11,16) || t;
+  return null;
+}
+
+function minsBetween(a, b) { // "HH:MM" строки в минутах разницы
+  const [ah, am] = a.split(":").map(Number);
+  const [bh, bm] = b.split(":").map(Number);
+  return bh*60 + bm - (ah*60 + am);
+}
+
+function isActive(flight, data) {
+  const st = (data && data.status ? String(data.status).toLowerCase() : "");
+  if (st.includes("depart") && !st.includes("arriv")) return true;           // в воздухе
+  const today = todayStr(0), yest = todayStr(-1), tom = todayStr(1);
+  if ([today, yest, tom].includes(flight.date)) return true;                  // даты рядом
+  return false;
+}
+
+function renderStatusHtml(flight) {
+  const rec = state[flight.num + "_" + flight.date];
+  const f = rec && rec.data;
+  if (!rec) return "<span style='font-size:12px;color:var(--sub)'>Загружаю…</span>";
+  if (rec.error) return `<span style="font-size:12px;color:var(--red)">Ошибка загрузки (${rec.error}). Проверь ключ интернета.</span>`;
+  if (!f) return "<span style='font-size:12px;color:var(--sub)'>Пока нет данных — гейты появляются за 1–7 дней до вылета.</span>";
+
+  const st = statusLabel(f.status);
+  const dep = f.departure || {};
+  const arr = f.arrival || {};
+  const gate = dep.gate || "—";
+  const terminal = dep.terminal || "—";
+  const schedDep = fmtTime(dep.scheduledTime);
+  const revisedDep = fmtTime(dep.revisedTime);
+  const schedArr = fmtTime(arr.scheduledTime);
+  const revisedArr = fmtTime(arr.revisedTime);
+
+  let delayHtml = "";
+  if (revisedDep && schedDep && revisedDep !== schedDep) {
+    const dm = minsBetween(schedDep, revisedDep);
+    if (dm > 0) delayHtml = `<div><b class="bad" style="color:var(--red)">+${dm} мин</b><span>Задержка</span></div>`;
+    else if (dm < 0) delayHtml = `<div><b style="color:var(--green)">${dm} мин</b><span>Раньше расп.</span></div>`;
+  }
+
+  const cells = [
+    `<div><b>${gate}</b><span>Гейт</span></div>`,
+    `<div><b>${terminal}</b><span>Терминал</span></div>`,
+    `<div><b>${revisedDep || schedDep || "—"}</b><span>Вылет ${revisedDep ? "факт." : "по расп."}</span></div>`,
+    `<div><b>${revisedArr || schedArr || "—"}</b><span>Прилёт ${revisedArr ? "факт." : "по расп."}</span></div>`,
+    delayHtml
+  ].filter(Boolean).join("");
+
+  const upd = rec.ts ? `обновлено ${new Date(rec.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}` : "";
+  return `
+    <span class="status-badge ${st.cls}">${st.text}</span>
+    <div class="status-grid">${cells}</div>
+    <div class="updated">${upd} · источник: AeroDataBox</div>
+    <details class="raw"><summary>Сырые данные (для отладки)</summary><pre>${JSON.stringify(f, null, 1)}</pre></details>
+  `;
+}
+
+async function fetchFlight(flight) {
+  const key = flight.num + "_" + flight.date;
+  const url = `https://aerodatabox.p.rapidapi.com/flights/Number/${flight.num}/${flight.date}?withAircraftImage=false&withLocation=false`;
+  try {
+    const res = await fetch(url, {
+      headers: { "X-RapidAPI-Key": RAPIDAPI_KEY, "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com" }
+    });
+    if (!res.ok) { state[key] = { data: null, ts: Date.now(), error: "HTTP " + res.status }; return; }
+    const data = await res.json();
+    const f = Array.isArray(data) ? data[0] : data;
+    state[key] = { data: f || null, ts: Date.now(), error: null };
+  } catch (e) {
+    state[key] = Object.assign({}, state[key], { ts: Date.now(), error: e.message });
+  }
+  paint();
+}
+
+function paint() {
+  document.querySelectorAll(".card").forEach(cardEl => {
+    const f = FLIGHTS[Number(cardEl.dataset.idx)];
+    cardEl.querySelector(".status-box").innerHTML = renderStatusHtml(f);
+  });
+  updateLivebar();
+}
+
+function updateLivebar() {
+  const dot = document.getElementById("livedot");
+  const txt = document.getElementById("livetext");
+  const errs = Object.values(state).filter(r => r.error).length;
+  const ok = Object.values(state).filter(r => r.data && !r.error).length;
+  if (RAPIDAPI_KEY.indexOf("ВСТАВЬ") !== -1) {
+    dot.classList.add("err"); txt.textContent = "Ключ не вставлен — статусы не грузятся"; return;
+  }
+  if (errs > 0 && ok === 0) { dot.classList.add("err"); txt.textContent = "Проблема с загрузкой"; return; }
+  dot.classList.remove("err");
+  const active = FLIGHTS.filter(f => isActive(f, state[f.num + "_" + f.date] && state[f.num + "_" + f.date].data));
+  txt.textContent = `Онлайн · рейсов в эфире: ${active.length} · всего проверено: ${Object.keys(state).length}`;
+}
+
+async function refreshAll(force) {
+  if (RAPIDAPI_KEY.indexOf("ВСТАВЬ") !== -1) { document.getElementById("keywarn").style.display = "block"; paint(); return; }
+  await Promise.all(FLIGHTS.map(f => fetchFlight(f)));
+}
+
+function scheduleNext() {
+  const anyActive = FLIGHTS.some(f => isActive(f, state[f.num + "_" + f.date] && state[f.num + "_" + f.date].data));
+  const interval = anyActive ? REFRESH_ACTIVE_MS : REFRESH_IDLE_MS;
+  setTimeout(() => { refreshAll(); scheduleNext(); }, interval);
+}
+
+function render() {
+  const app = document.getElementById("app");
+  let html = "";
+  let lastGroup = "";
+  FLIGHTS.forEach((f, i) => {
+    if (f.group !== lastGroup) { html += `<div class="group-title">${f.group}</div>`; lastGroup = f.group; }
+    html += `
+      <div class="card" data-idx="${i}">
+        <div class="row1"><span class="airline">${f.airline}</span><span class="flightno">${f.num}</span></div>
+        <div class="route">
+          <div class="city"><div class="code">${f.from}</div><div class="cityname">${f.fromCity}</div></div>
+          <div class="arrow"><span>${f.date.slice(8,10)}.${f.date.slice(5,7)}</span></div>
+          <div class="city"><div class="code">${f.to}</div><div class="cityname">${f.toCity}</div></div>
+        </div>
+        <div class="meta"><span>Вылет <b>${f.dep}</b></span><span>Прилёт <b>${f.arr}</b></span></div>
+        <div class="status-box"></div>
+        <div class="linkrow">
+          <button class="btn" onclick="refreshAll(true)">Обновить всё ⟳</button>
+          <a class="btn secondary" href="https://www.google.com/search?q=${f.num}+flight+status" target="_blank" rel="noopener">Трекер →</a>
+        </div>
+      </div>
+    `;
+  });
+  app.innerHTML = html;
+  paint();
+}
+
+render();
+refreshAll();
+scheduleNext();
+</script>
+</body>
+</html>
